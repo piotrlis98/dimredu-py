@@ -24,6 +24,18 @@ from sklearn.pipeline import Pipeline
 from sklearn.metrics import matthews_corrcoef
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import VarianceThreshold
+import os
+
+# Lista katalogów do stworzenia
+folders = ['matrices', 'eigenvals', 'metrics', 'matthews']
+
+# Pętla po katalogach
+for folder in folders:
+    # Sprawdź, czy katalog istnieje
+    if not os.path.exists(folder):
+        # Jeśli nie, to utwórz go
+        os.mkdir(folder)
+        print(f"Utworzono katalog {folder}")
 
 
 def heatmap(arr, dataset_name):
@@ -72,6 +84,7 @@ def heatmap(arr, dataset_name):
     plt.xticks(range(len(eig_vals)), range(1, len(eig_vals) + 1))
     plt.savefig('eigenvals/eigenvalues_' + str(dataset_name) + '.svg')
     plt.clf()
+
 
 def load_data(dataset_name):
     """
