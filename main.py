@@ -283,14 +283,14 @@ if __name__ == '__main__':
         headers = ["Metoda", "Precyzja", "Czułość", "Miara F1", "Dokładność", "Matthews"]
         tabela = pd.DataFrame(avg_results_list, columns=headers)
 
-        informacje_o_klasyfikatorze = f"Klasyfikator: {clf.__class__.__name__}"
+        clf_info = f"Klasyfikator: {clf.__class__.__name__}"
 
         plt.figure(figsize=(10, 6))
         sns.set(font_scale=1)
         ax = sns.heatmap(tabela.set_index('Metoda').iloc[:, :5], annot=True, fmt=".3f", cmap="YlGnBu", cbar=True)
         iters_text = "eksperymentów" if num_experiments > 1 else "eksperymentu"
         plt.title(
-            f"Metryki klasyfikacji dla {dataset_name} [Średnia z {num_experiments} {iters_text}] \n{informacje_o_klasyfikatorze}")
+            f"Metryki klasyfikacji dla {dataset_name} [Średnia z {num_experiments} {iters_text}] \n{clf_info}")
 
         plt.savefig('metrics/klasyfikator_' + str(clf.__class__.__name__) + '.svg')
         plt.clf()
