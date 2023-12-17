@@ -14,7 +14,7 @@ Kod wczytuje dane z wybranego zbioru danych spośród pięciu dostępnych opcji:
 
 ### Wybór metody i klasyfikatora
 
-Następnie kod wybiera metodę redukcji wymiarowości lub selekcji cech spośród siedmiu dostępnych opcji: PCA, LDA, CA, Chi2, RFE, VT i SFS. Wybiera również klasyfikator spośród ośmiu dostępnych opcji: SVC, LogisticRegression, KNeighborsClassifier, GaussianNB, DecisionTreeClassifier, XGBClassifier, MLPClassifier i RandomForestClassifier.
+Następnie kod wybiera metodę redukcji wymiarowości lub selekcji cech spośród siedmiu dostępnych opcji: PCA, LDA, CA, Chi2, RFE, VT oraz braku redukcji. Wybiera również klasyfikator spośród ośmiu dostępnych opcji: SVC, LogisticRegression, KNeighborsClassifier, GaussianNB, DecisionTreeClassifier, XGBClassifier, MLPClassifier i RandomForestClassifier.
 
 ### Przygotowanie danych
 
