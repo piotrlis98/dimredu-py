@@ -1,30 +1,36 @@
+# Podstawowe narzędzia do pracy z danymi
+import os
 import numpy as np
-from sklearn import datasets as loadDataset
-from sklearn.decomposition import PCA, FastICA, FactorAnalysis
+import pandas as pd
+
+# Wizualizacja
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Narzędzia do przetwarzania danych
+from sklearn.decomposition import PCA
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.cluster import FeatureAgglomeration
-from sklearn.model_selection import train_test_split
-import seaborn as sns
-from sklearn.svm import SVC
-import pandas as pd
-from sklearn.metrics import classification_report
-from tqdm import tqdm
+from sklearn.feature_selection import chi2, SelectKBest, RFE, VarianceThreshold
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import MinMaxScaler
-import matplotlib.pyplot as plt
-from sklearn.feature_selection import chi2, SelectKBest, SequentialFeatureSelector
-from sklearn.feature_selection import RFE
+
+# Klasyfikatory
+from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
-import xgboost as xgb
-from sklearn.neural_network import MLPClassifier
-from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
-from sklearn.pipeline import Pipeline
-from sklearn.metrics import matthews_corrcoef
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.feature_selection import VarianceThreshold
-import os
+from sklearn.neural_network import MLPClassifier
+import xgboost as xgb
+
+# Metryki i dodatkowe narzędzia
+from sklearn.metrics import classification_report, matthews_corrcoef
+from sklearn.pipeline import Pipeline
+from tqdm import tqdm
+from sklearn.datasets import load_breast_cancer
+
 
 # Lista katalogów do stworzenia
 folders = ['matrices', 'eigenvals', 'metrics', 'matthews']
@@ -53,7 +59,6 @@ def heatmap(arr, dataset_name):
             >>> heatmap(X, 'breast_cancer')
         """
     dataframe = pd.DataFrame(arr)
-
     inf_values = np.isinf(dataframe)
     nan_values = np.isnan(dataframe)
 
@@ -100,9 +105,10 @@ def load_data(dataset_name):
             >>> X, y = load_data('breast_cancer')
         """
     if dataset_name == 'breast_cancer':
-        data = loadDataset.load_breast_cancer()  # https://www.kaggle.com/datasets/yasserh/breast-cancer-dataset
+        data = load_breast_cancer()  # https://www.kaggle.com/datasets/yasserh/breast-cancer-dataset
         X = data.data
         y = data.target
+        print(y)
     elif dataset_name == 'sonar':  # https://www.kaggle.com/datasets/rupakroy/sonarcsv
         data = np.loadtxt('datasets/sonar.all-data.txt', delimiter=',', dtype=str)
         X = data[:, :-1].astype(float)
@@ -113,26 +119,16 @@ def load_data(dataset_name):
         X = data.drop(columns=['Class']).values
         y = data['Class'].map({'Kirmizi_Pistachio': 0, 'Siit_Pistachio': 1}).values
     elif dataset_name == 'weather':
-        # Wczytaj dane
         data = pd.read_csv('datasets/weather.csv', skiprows=range(1, 2526), nrows=366)  # rok 2020
         data = data.drop(columns=['Date'])
-
-        # Zamień kierunki wiatru na liczby
-        wind_direction_mapping = {'W': 0, 'WNW': 1, 'NW': 2, 'NNW': 3, 'N': 4, 'NNE': 5, 'NE': 6, 'ENE': 7,
-                                  'E': 8, 'ESE': 9, 'SE': 10, 'SSE': 11, 'S': 12, 'SSW': 13, 'SW': 14, 'WSW': 15}
-
-        data['WindGustDir'] = data['WindGustDir'].map(wind_direction_mapping)
-        data['WindDir9am'] = data['WindDir9am'].map(wind_direction_mapping)
-        data['WindDir3pm'] = data['WindDir3pm'].map(wind_direction_mapping)
-
+        wind_columns = ['WindGustDir', 'WindDir9am', 'WindDir3pm']
+        data = pd.get_dummies(data, columns=wind_columns, drop_first=True, dtype=int)
         X = data.drop(columns=['RainToday']).values
-        # Przypisz do zmiennej y kolumnę "RainToday"
         y = data['RainToday'].map({'No': 0, 'Yes': 1}).values
     elif dataset_name == 'nba':
         data = pd.read_csv('datasets/nba.csv')
         data = data.drop(columns=['name'])
         data = data.dropna(subset=['3p'])
-
         X = data.drop(columns=['target_5yrs']).values
         y = data['target_5yrs'].values.astype(int)
 
@@ -174,10 +170,10 @@ def choose_classifier(choice):
        """
     if choice == 0:
         clf = SVC(probability=False)
-        param_grid = {'kernel': ['rbf', 'poly', 'sigmoid']}
+        param_grid = {'kernel': ['rbf', 'poly', 'sigmoid'], 'C': [1, 10, 100]}
     elif choice == 1:
         clf = LogisticRegression(max_iter=10000)
-        param_grid = {'C': [0.1, 1, 10, 100]}
+        param_grid = {'C': [1, 10, 100]}
     elif choice == 2:
         clf = KNeighborsClassifier()
         param_grid = {'n_neighbors': range(3, 10), 'algorithm': ['ball_tree', 'kd_tree', 'brute']}
@@ -219,15 +215,12 @@ if __name__ == '__main__':
     methods = [
         ("PCA", PCA(), {'n_components': [0.9, 0.95, 0.99], 'svd_solver': ['auto', 'full'],
                         'whiten': [True, False], 'tol': [0, 0.01, 0.05]}),
-        ("LDA", LinearDiscriminantAnalysis(), {}),
-        # ("LDA", LinearDiscriminantAnalysis(), {'solver': ['svd', 'eigen']}),
+       ("LDA", LinearDiscriminantAnalysis(), {'solver': ['svd', 'eigen']}),
+        #("LDA", LinearDiscriminantAnalysis(), {}),
         ("CA", FeatureAgglomeration(), {'n_clusters': range(2, 10, 1)}),
         ("Chi2", SelectKBest(chi2), {'k': range(1, X.shape[1] + 1)}),
         ("RFE", RFE(estimator=LogisticRegression(max_iter=10000)), {'n_features_to_select': range(1, X.shape[1] + 1)}),
         ("VT", VarianceThreshold(), {}),
-        # ("SFS", SequentialFeatureSelector(KNeighborsClassifier(n_neighbors=3), cv=3, n_jobs=-1, direction='backward'),
-        # {'n_features_to_select': np.arange(0.1, 1, 0.1)}),
-
     ]
 
     num_experiments = int(input("Podaj liczbę powtórzeń eksperymentu: "))
@@ -235,7 +228,7 @@ if __name__ == '__main__':
     all_results = {method: [] for method, _, _ in methods}
     all_results['Brak'] = []
 
-    for clf_type in tqdm(range(0, 8), desc='Trwa wykonywanie eksperymentu'):
+    for clf_type in tqdm(range(7, 8), desc='Trwa wykonywanie eksperymentu'):
         clf, param_grid = choose_classifier(clf_type)
 
         mcc_only = {method: [] for method, _, _ in methods}
@@ -258,7 +251,7 @@ if __name__ == '__main__':
                 temp_param_grid.update(
                     {f'{clf.__class__.__name__.lower()}__{key}': value for key, value in param_grid.items()})
 
-                grid_search = GridSearchCV(pipe, temp_param_grid, cv=3, n_jobs=-1)
+                grid_search = GridSearchCV(pipe, temp_param_grid, cv=3, n_jobs=-1, scoring="matthews_corrcoef")
 
                 grid_search.fit(X_train, y_train)
 
@@ -293,14 +286,14 @@ if __name__ == '__main__':
         avg_results = {method: np.mean(results, axis=0) for method, results in all_results.items()}
         avg_results_list = [[method] + result.tolist() for method, result in avg_results.items()]
 
-        headers = ["Metoda", "Precyzja", "Czułość", "Miara F1", "Dokładność", "Matthews"]
+        headers = ["Metoda redukcji wymiarowości", "Precyzja", "Czułość", "Miara F1", "Dokładność", "MCC"]
         tabela = pd.DataFrame(avg_results_list, columns=headers)
 
         clf_info = f"Klasyfikator: {clf.__class__.__name__}"
 
         plt.figure(figsize=(10, 6))
         sns.set(font_scale=1)
-        ax = sns.heatmap(tabela.set_index('Metoda').iloc[:, :5], annot=True, fmt=".3f", cmap="YlGnBu", cbar=True)
+        ax = sns.heatmap(tabela.set_index('Metoda redukcji wymiarowości').iloc[:, :5], annot=True, fmt=".3f", cmap="YlGnBu", cbar=True)
         iters_text = "eksperymentów" if num_experiments > 1 else "eksperymentu"
         plt.title(
             f"Metryki klasyfikacji dla {dataset_name} [Średnia z {num_experiments} {iters_text}] \n{clf_info}")
